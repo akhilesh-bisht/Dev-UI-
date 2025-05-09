@@ -12,14 +12,20 @@
     "type": "git",
     "url": "git+https://github.com/akhilesh-bisht/Dev-UI-.git"
   },
-  "keywords": [],
+  "keywords": [
+    "javascript",
+    "node js",
+    "backend",
+    "express"
+  ],
   "author": "",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/akhilesh-bisht/Dev-UI-/issues"
   },
   "homepage": "https://github.com/akhilesh-bisht/Dev-UI-#readme",
-  "dependencies": {
-    "nodemon": "^3.1.10"
+  "devDependencies": {
+    "nodemon": "^3.1.10",
+    "prettier": "^3.5.3"
   }
 }
