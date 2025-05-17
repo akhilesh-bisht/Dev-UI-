@@ -1,8 +1,7 @@
-import dotenv from "dotenv";
-import ConnectDb from "./db/db.js";
+import "./config/env.js";
+import ConnectDb from "./config/db.js";
 import { app } from "./app.js";
 
-dotenv.config();
 const PORT = process.env.PORT || 3500;
 const startServer = async () => {
   try {
@@ -20,5 +19,4 @@ const startServer = async () => {
     process.exit(1);
   }
 };
-
 startServer();
