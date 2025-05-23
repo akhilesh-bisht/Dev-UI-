@@ -88,12 +88,6 @@ export const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, createdUser, "User registered successfully"));
 });
 
-import asyncHandler from "express-async-handler";
-import User from "../models/userModel.js"; // Adjust path as needed
-import ApiError from "../utils/ApiError.js";
-import ApiResponse from "../utils/ApiResponse.js";
-import { generateAccessAndRefreshTokens } from "../utils/tokenUtils.js"; // Adjust to your actual token generator
-
 export const loginUser = asyncHandler(async (req, res) => {
   // 1 - Get data from frontend
   const { email, username, password } = req.body;
