@@ -4,6 +4,24 @@ import { ApiError } from "../utils/ApiError.js";
 import { uploadOnCloudinary } from "../utils/cloudnary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
+const generateAccessAndRefreshTokens = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
+
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+
+    return { accessToken, refreshToken };
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "Something went wrong while generating refresh and access tokens"
+    );
+  }
+};
+
 export const registerUser = asyncHandler(async (req, res) => {
   const { username, email, password, fullName } = req.body;
 
@@ -68,4 +86,69 @@ export const registerUser = asyncHandler(async (req, res) => {
   return res
     .status(201)
     .json(new ApiResponse(201, createdUser, "User registered successfully"));
+});
+
+import asyncHandler from "express-async-handler";
+import User from "../models/userModel.js"; // Adjust path as needed
+import ApiError from "../utils/ApiError.js";
+import ApiResponse from "../utils/ApiResponse.js";
+import { generateAccessAndRefreshTokens } from "../utils/tokenUtils.js"; // Adjust to your actual token generator
+
+export const loginUser = asyncHandler(async (req, res) => {
+  // 1 - Get data from frontend
+  const { email, username, password } = req.body;
+
+  // 2 - Validate inputs
+  if (!email || !username || !password) {
+    throw new ApiError(400, "All fields are required");
+  }
+
+  // 3 - Check if email or username exists
+  const user = await User.findOne({
+    $or: [{ email }, { username }],
+  });
+
+  if (!user) {
+    throw new ApiError(400, "Email or username not registered");
+  }
+
+  // 4 - Check password
+  const isPasswordCorrect = await user.isPasswordCorrect(password);
+  if (!isPasswordCorrect) {
+    throw new ApiError(400, "Password does not match");
+  }
+
+  // 5 - Generate tokens
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
+    user._id
+  );
+
+  // 6 - Remove sensitive data
+  const loggedUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
+
+  // 7 - Set cookies
+  const options = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production", // true in production
+    sameSite: "strict",
+  };
+
+  // 8 - Send response
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          user: loggedUser,
+          accessToken,
+          refreshToken,
+        },
+        "User login success"
+      )
+    );
 });
