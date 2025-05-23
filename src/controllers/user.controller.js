@@ -4,6 +4,8 @@ import { ApiError } from "../utils/ApiError.js";
 import { uploadOnCloudinary } from "../utils/cloudnary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
+// generate Tokens
+
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
     const user = await User.findById(userId);
@@ -22,6 +24,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
   }
 };
 
+// register user
 export const registerUser = asyncHandler(async (req, res) => {
   const { username, email, password, fullName } = req.body;
 
@@ -88,6 +91,7 @@ export const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, createdUser, "User registered successfully"));
 });
 
+// login user
 export const loginUser = asyncHandler(async (req, res) => {
   // 1 - Get data from frontend
   const { email, username, password } = req.body;
@@ -145,4 +149,45 @@ export const loginUser = asyncHandler(async (req, res) => {
         "User login success"
       )
     );
+});
+
+// logout user
+
+export const logoutUser = asyncHandler(async (req, res) => {
+  try {
+    // Update the user to clear the refreshToken in the database
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: { refreshToken: undefined } }, // Remove refreshToken
+      { new: true }
+    );
+
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    // Clear cookies
+    const options = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // Set to true in production
+      sameSite: "strict",
+    };
+
+    // Clear the cookies from the client's browser
+    res.clearCookie("accessToken", options);
+    res.clearCookie("refreshToken", options);
+
+    // Send response with success message
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { message: "User logged out successfully" },
+          "Logout success"
+        )
+      );
+  } catch (error) {
+    throw new ApiError(500, error.message || "An error occurred during logout");
+  }
 });
