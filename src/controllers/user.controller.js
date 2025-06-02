@@ -90,7 +90,6 @@ export const registerUser = asyncHandler(async (req, res) => {
     .status(201)
     .json(new ApiResponse(201, createdUser, "User registered successfully"));
 });
-
 // login user
 export const loginUser = asyncHandler(async (req, res) => {
   // 1 - Get data from frontend
@@ -113,6 +112,7 @@ export const loginUser = asyncHandler(async (req, res) => {
   // 4 - Check password
   const isPasswordCorrect = await user.isPasswordCorrect(password);
   if (!isPasswordCorrect) {
+    console.log(isPasswordCorrect);
     throw new ApiError(400, "Password does not match");
   }
 
