@@ -3,6 +3,7 @@ import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { uploadOnCloudinary } from "../utils/cloudnary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import jwt from "jsonwebtoken";
 
 // generate Tokens
 
@@ -96,8 +97,8 @@ export const loginUser = asyncHandler(async (req, res) => {
   const { email, username, password } = req.body;
 
   // 2 - Validate inputs
-  if (!email || !username || !password) {
-    throw new ApiError(400, "All fields are required");
+  if ((!email && !username) || !password) {
+    throw new ApiError(400, "Email or username and password are required");
   }
 
   // 3 - Check if email or username exists
@@ -189,5 +190,46 @@ export const logoutUser = asyncHandler(async (req, res) => {
       );
   } catch (error) {
     throw new ApiError(500, error.message || "An error occurred during logout");
+  }
+});
+
+export const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incomingRefreshToken = req.cookie.refreshToken || req.body.refreshToken;
+  if (!incomingRefreshToken) {
+    throw new ApiError(400, "unauthorized, refresh token is required");
+  }
+  try {
+    const decodedToken = jwt.verify(
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRE
+    );
+    const user = await User.findById(decodedToken._id);
+    if (!user) {
+      throw new ApiError(404, "invalid refresh token, user not found");
+    }
+    if (incomingRefreshToken !== user?.refreshToken) {
+      throw new ApiError(403, "invalid refresh token");
+    }
+    const options = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      secure: true,
+    };
+    const { accessToken, newRefreshToken } =
+      await generateAccessAndRefreshTokens(user._id);
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", newRefreshToken, options)
+      .json(
+        new ApiResponse(
+          200,
+          { accessToken, newRefreshToken },
+          { message: "Access token refreshed successfully" }
+        )
+      );
+  } catch (error) {
+    console.error("Error refreshing access token:", error);
+    throw new ApiError(500, "Failed to refresh access token");
   }
 });
