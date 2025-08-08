@@ -348,44 +348,42 @@ export const getChannelDetails = asyncHandler(async (req, res) => {
     },
     {
       $lookup: {
-        from: "subscriptions", 
+        from: "subscriptions",
         localField: "_id",
         foreignField: "channel",
         as: "subscribers",
       },
     },
-     {
+    {
       $lookup: {
-        from: "subscriptions", 
+        from: "subscriptions",
         localField: "_id",
         foreignField: "subscriber",
         as: "subscribersTo",
       },
-
     },
     {
-      $addFields:{
+      $addFields: {
         subscriberCount: { $size: "$subscribers" },
         channelSubscribersToCount: { $size: "$subscribersTo" },
       },
-      isSubscribe:{
-        $cond:{
-          if:{$in:[req.user._id,"$subscribers.subscriber"]},
-          then:true,
-          else:false
-
-        }
-      }
+      isSubscribe: {
+        $cond: {
+          if: { $in: [req.user._id, "$subscribers.subscriber"] },
+          then: true,
+          else: false,
+        },
+      },
     },
     {
       $project: {
-       fullName: 1,
+        fullName: 1,
         username: 1,
         avatar: 1,
         coverImage: 1,
         subscriberCount: 1,
         channelSubscribersToCount: 1,
-        isSubscribe: 1, 
+        isSubscribe: 1,
       },
     },
   ]);
@@ -396,5 +394,11 @@ export const getChannelDetails = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, channelDetails[0], "Channel details fetched successfully"));
+    .json(
+      new ApiResponse(
+        200,
+        channelDetails[0],
+        "Channel details fetched successfully"
+      )
+    );
 });
