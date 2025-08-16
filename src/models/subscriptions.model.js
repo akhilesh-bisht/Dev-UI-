@@ -1,5 +1,4 @@
 import mongoose, { Model, Schema } from "mongoose";
-import { User } from "./user.model";
 const subscriptionSchema = new Schema(
   {
     subscriber: {
